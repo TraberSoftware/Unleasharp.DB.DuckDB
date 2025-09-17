@@ -1,5 +1,4 @@
-﻿using DuckDB;
-using DuckDB.NET.Data;
+﻿using DuckDB.NET.Data;
 using DuckDB.NET.Native;
 using System;
 using System.Collections.Generic;
@@ -148,23 +147,25 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     /// <inheritdoc/>
     public override Query Set<T>(Expression<Func<T, object>> expression, dynamic value, bool escape = true) {
         Type   tableType         = typeof(T);
-        string dbColumnName      = ExpressionHelper.ExtractColumnName<T>(expression);
-        string classPropertyName = ExpressionHelper.ExtractClassFieldName<T>(expression);
-        string tableName         = tableType.GetTableName();
+        string classPropertyName = ExpressionHelper.ExtractClassMemberName<T>(expression);
+        string dbColumnName      = ReflectionCache.GetColumnName<T>(expression);
 
-        MemberInfo member    = tableType.GetMember(classPropertyName).FirstOrDefault();
+        MemberInfo member = tableType.GetMember(classPropertyName).FirstOrDefault();
 
         if (member == null) {
             return this.Set(dbColumnName, value, escape);
         }
 
         DuckDBParameter param = this.__GetMemberInfoDuckDBParameter(value, member);
+        if (param != null) {
+            return this.Set(new Where<Query> {
+                Field       = new FieldSelector(dbColumnName),
+                Value       = param,
+                EscapeValue = true
+            });
+        }
 
-        return this.Set(new Where<Query> {
-            Field       = new FieldSelector(dbColumnName),
-            Value       = param,
-            EscapeValue = true
-        });
+        return this;
     }
 
     /// <inheritdoc/>
@@ -512,7 +513,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     /// cref="WhereIn{T}.Values"/> collection is null or empty.</returns>
     public string RenderWhereIn(WhereIn<Query> fragment) {
         if (fragment.Subquery != null) {
-            return $"{fragment.Field.Render()} IN ({fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()})";
+            return $"{fragment.Field.Render()} {fragment.Comparer.GetDescription()} ({fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()})";
         }
 
         if (fragment.Values == null || fragment.Values.Count == 0) {
@@ -856,7 +857,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         foreach (UniqueKey uKey in tableType.GetCustomAttributes<UniqueKey>()) {
             definitions.Add(
                 $"CONSTRAINT {Query.FieldDelimiter}uk_{uKey.Name}{Query.FieldDelimiter} UNIQUE " +
-                $"({string.Join(", ", uKey.Columns.Select(column => $"{Query.FieldDelimiter}{tableType.GetColumnName(column)}{Query.FieldDelimiter}"))})"
+                $"({string.Join(", ", uKey.Columns.Select(column => $"{Query.FieldDelimiter}{ReflectionCache.GetColumnName(tableType, column)}{Query.FieldDelimiter}"))})"
             );
         }
         foreach (ForeignKey fKey in tableType.GetCustomAttributes<ForeignKey>()) {
