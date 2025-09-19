@@ -240,6 +240,26 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         if (value == null) {
             value = DBNull.Value;
         }
+        else {
+            if (value.IsWholeNumber() && column != null) {
+                value = column.DataType switch {
+                    ColumnDataType.Int16  => Convert.ToInt16(value),
+                    ColumnDataType.UInt16 => Convert.ToUInt16(value),
+                    ColumnDataType.Int    => Convert.ToInt32(value),
+                    ColumnDataType.Int32  => Convert.ToInt32(value),
+                    ColumnDataType.UInt32 => Convert.ToUInt32(value),
+                    ColumnDataType.Int64  => Convert.ToInt64(value),
+                    ColumnDataType.UInt64 => Convert.ToUInt64(value),
+
+                    // Leave value untouched if DataType not set or not matching a whole number type
+                    _ => value
+                };
+            }
+            if (value is Enum) {
+                // Convert enum values to int
+                value = ((Enum) value).GetDescription();
+            }
+        }
 
         // Don't set null values to AutoIncrement columns
         if ((column != null && column.AutoIncrement) && (value == null || value == DBNull.Value)) {
@@ -264,10 +284,10 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
                 columnDataType = memberInfoType.GetColumnType();
             }
 
-            dbColumnDataType = this.GetSystemDBType(columnDataType.Value.GetType());
+            dbColumnDataType = this.GetSystemDBType(columnDataType.Value);
         }
 
-        if (dbColumnDataType.HasValue && !memberInfoType.IsEnum) {
+        if (dbColumnDataType.HasValue) {
             return new DuckDBParameter {
                 ParameterName = dbFieldName,
                 Value         = value,
@@ -551,7 +571,10 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             }
         }
         else {
-            rendered.Add("*");
+            // If this is a UNION query, avoid adding * to the select
+            if (this.QueryType != QueryType.SELECT_UNION) {
+                rendered.Add("*");
+            }
         }
 
         return rendered.Count > 0 ? $"SELECT {(this.QueryDistinct ? "DISTINCT " : "")}{string.Join(',', rendered)}" : "";
@@ -893,14 +916,26 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         }
 
         string columnDataTypeString = tableColumn.DataTypeString ?? this.GetColumnDataTypeString(tableColumn.DataType);
+        if (columnType.IsEnum) {
+            columnDataTypeString = $"{columnType.Name.ToLowerInvariant()}";
+        }
 
         StringBuilder columnBuilder = new StringBuilder($"{Query.FieldDelimiter}{tableColumn.Name}{Query.FieldDelimiter} {columnDataTypeString}");
-        if (tableColumn.Length > 0)
-            columnBuilder.Append($" ({tableColumn.Length}{(tableColumn.Precision > 0 ? $",{tableColumn.Precision}" : "")})");
+        if (tableColumn.Length > 0) {
+            string lengthToAppend = tableColumn.DataType switch {
+                ColumnDataType.Binary => null,
+                ColumnDataType.Enum   => null,
+
+                _ => $" ({tableColumn.Length}{(tableColumn.Precision > 0 ? $",{tableColumn.Precision}" : "")})"
+            };
+            if (lengthToAppend != null) {
+                columnBuilder.Append(lengthToAppend);
+            }
+        }
 
         if (tableColumn.Unique)
             columnBuilder.Append(" UNIQUE");
-        if (tableColumn.PrimaryKey && string.IsNullOrWhiteSpace(tableColumn.Default))
+        if (tableColumn.PrimaryKey)
             columnBuilder.Append(" PRIMARY KEY");
         if (tableColumn.NotNull && !tableColumn.PrimaryKey) 
             columnBuilder.Append(" NOT NULL");
@@ -1034,25 +1069,61 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
         };
     }
 
-    public DbType GetSystemDBType(Type? type) {
+    public DbType GetSystemDBTypeByValue(object value) {
         return true switch {
-            true when type == typeof(bool)     => DbType.Boolean,
-            true when type == typeof(sbyte)    => DbType.SByte,
-            true when type == typeof(short)    => DbType.Int16,
-            true when type == typeof(int)      => DbType.Int32,
-            true when type == typeof(long)     => DbType.Int64,
-            true when type == typeof(float)    => DbType.Single,
-            true when type == typeof(double)   => DbType.Double,
-            true when type == typeof(string)   => DbType.String,
-            true when type == typeof(Guid)     => DbType.Guid,
-            true when type == typeof(decimal)  => DbType.Currency,
-            true when type == typeof(byte)     => DbType.Byte,
-            true when type == typeof(ushort)   => DbType.UInt16,
-            true when type == typeof(uint)     => DbType.UInt32,
-            true when type == typeof(ulong)    => DbType.UInt64,
-            true when type == typeof(byte)     => DbType.Binary,
-            true when type == typeof(DateTime) => DbType.DateTime,
+            true when value is bool     => DbType.Boolean,
+            true when value is sbyte    => DbType.SByte,
+            true when value is short    => DbType.Int16,
+            true when value is int      => DbType.Int32,
+            true when value is long     => DbType.Int64,
+            true when value is float    => DbType.Single,
+            true when value is double   => DbType.Double,
+            true when value is string   => DbType.String,
+            true when value is Enum     => DbType.String,
+            true when value is Guid     => DbType.Guid,
+            true when value is decimal  => DbType.Currency,
+            true when value is byte     => DbType.Byte,
+            true when value is ushort   => DbType.UInt16,
+            true when value is uint     => DbType.UInt32,
+            true when value is ulong    => DbType.UInt64,
+            true when value is byte     => DbType.Binary,
+            true when value is DateOnly => DbType.Date,
+            true when value is DateTime => DbType.DateTime,
+        
+            _ => DbType.String
+        };
+    }
 
+    public DbType GetSystemDBType(ColumnDataType type) {
+        return type switch {
+            ColumnDataType.Boolean    => DbType.Boolean,
+            ColumnDataType.Int16      => DbType.Int16,
+            ColumnDataType.Int        => DbType.Int32,
+            ColumnDataType.Int32      => DbType.Int32,
+            ColumnDataType.Int64      => DbType.Int64,
+            ColumnDataType.UInt16     => DbType.UInt16,
+            ColumnDataType.UInt       => DbType.UInt32,
+            ColumnDataType.UInt32     => DbType.UInt32,
+            ColumnDataType.UInt64     => DbType.UInt64,
+            ColumnDataType.Decimal    => DbType.Decimal,
+            ColumnDataType.Float      => DbType.Single,
+            ColumnDataType.Double     => DbType.Double,
+            ColumnDataType.TinyText   => DbType.String,
+            ColumnDataType.Text       => DbType.String,
+            ColumnDataType.MediumText => DbType.String,
+            ColumnDataType.LongText   => DbType.String,
+            ColumnDataType.Char       => DbType.String,
+            ColumnDataType.Varchar    => DbType.String,
+            ColumnDataType.Enum       => DbType.String,
+            ColumnDataType.Date       => DbType.Date,
+            ColumnDataType.DateTime   => DbType.DateTime,
+            ColumnDataType.Time       => DbType.Time,
+            ColumnDataType.Timestamp  => DbType.DateTime,
+            ColumnDataType.Binary     => DbType.Binary,
+            ColumnDataType.Guid       => DbType.Guid,
+            ColumnDataType.Json       => DbType.String,
+            ColumnDataType.Xml        => DbType.String,
+        
             _ => DbType.String
         };
     }
