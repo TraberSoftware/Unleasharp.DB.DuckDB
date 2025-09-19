@@ -551,10 +551,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             }
         }
         else {
-            // If this is a UNION query, avoid adding * to the select
-            if (this.QueryType != QueryType.SELECT_UNION) {
-                rendered.Add("*");
-            }
+            rendered.Add("*");
         }
 
         return rendered.Count > 0 ? $"SELECT {(this.QueryDistinct ? "DISTINCT " : "")}{string.Join(',', rendered)}" : "";
@@ -962,30 +959,33 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     /// <exception cref="NotSupportedException">Thrown if the specified <paramref name="type"/> is not supported by DuckDB or is <c>null</c>.</exception>
     public string GetColumnDataTypeString(ColumnDataType? type) {
         return type switch {
-            ColumnDataType.Boolean   => "BOOLEAN",
-            ColumnDataType.Int16     => "SMALLINT",
-            ColumnDataType.Int       => "INTEGER",
-            ColumnDataType.Int32     => "INTEGER",
-            ColumnDataType.Int64     => "BIGINT",
-            ColumnDataType.UInt16    => "USMALLINT",
-            ColumnDataType.UInt32    => "UINTEGER",
-            ColumnDataType.UInt      => "UINTEGER",
-            ColumnDataType.UInt64    => "UBIGINT",
-            ColumnDataType.Decimal   => "DECIMAL",
-            ColumnDataType.Float     => "FLOAT",
-            ColumnDataType.Double    => "DOUBLE",
-            ColumnDataType.Text      => "TEXT",
-            ColumnDataType.Char      => "VARCHAR",
-            ColumnDataType.Varchar   => "VARCHAR",
-            ColumnDataType.Enum      => "ENUM",
-            ColumnDataType.Date      => "TIMESTAMP",
-            ColumnDataType.DateTime  => "TIMESTAMP",
-            ColumnDataType.Time      => "TIME",
-            ColumnDataType.Timestamp => "TIMESTAMPTZ",
-            ColumnDataType.Binary    => "BLOB",
-            ColumnDataType.Guid      => "UUID",
-            ColumnDataType.Json      => "VARCHAR",
-            ColumnDataType.Xml       => "VARCHAR",
+            ColumnDataType.Boolean    => "BOOLEAN",
+            ColumnDataType.Int16      => "SMALLINT",
+            ColumnDataType.Int        => "INTEGER",
+            ColumnDataType.Int32      => "INTEGER",
+            ColumnDataType.Int64      => "BIGINT",
+            ColumnDataType.UInt16     => "USMALLINT",
+            ColumnDataType.UInt32     => "UINTEGER",
+            ColumnDataType.UInt       => "UINTEGER",
+            ColumnDataType.UInt64     => "UBIGINT",
+            ColumnDataType.Decimal    => "DECIMAL",
+            ColumnDataType.Float      => "FLOAT",
+            ColumnDataType.Double     => "DOUBLE",
+            ColumnDataType.TinyText   => "TEXT",
+            ColumnDataType.Text       => "TEXT",
+            ColumnDataType.MediumText => "TEXT",
+            ColumnDataType.LongText   => "TEXT",
+            ColumnDataType.Char       => "VARCHAR",
+            ColumnDataType.Varchar    => "VARCHAR",
+            ColumnDataType.Enum       => "ENUM",
+            ColumnDataType.Date       => "TIMESTAMP",
+            ColumnDataType.DateTime   => "TIMESTAMP",
+            ColumnDataType.Time       => "TIME",
+            ColumnDataType.Timestamp  => "TIMESTAMPTZ",
+            ColumnDataType.Binary     => "BLOB",
+            ColumnDataType.Guid       => "UUID",
+            ColumnDataType.Json       => "VARCHAR",
+            ColumnDataType.Xml        => "VARCHAR",
 
             _ => throw new NotSupportedException($"DuckDB does not support {type}")
         };
@@ -1014,7 +1014,10 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             ColumnDataType.Decimal   => DuckDBType.Decimal,
             ColumnDataType.Float     => DuckDBType.Float,
             ColumnDataType.Double    => DuckDBType.Double,
+            ColumnDataType.TinyText  => DuckDBType.Varchar,
             ColumnDataType.Text      => DuckDBType.Varchar,
+            ColumnDataType.MediumText=> DuckDBType.Varchar,
+            ColumnDataType.LongText  => DuckDBType.Varchar,
             ColumnDataType.Char      => DuckDBType.Varchar,
             ColumnDataType.Varchar   => DuckDBType.Varchar,
             ColumnDataType.Enum      => DuckDBType.Enum,
