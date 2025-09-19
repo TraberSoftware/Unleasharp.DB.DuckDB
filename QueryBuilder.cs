@@ -2,6 +2,7 @@
 using DuckDB.NET.Data;
 using System;
 using System.Data;
+using System.IO;
 using Unleasharp.DB.Base.ExtensionMethods;
 using Unleasharp.ExtensionMethods;
 
@@ -101,12 +102,12 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, Du
                 DuckDBParameter sqlParameter = (DuckDBParameter)value;
                 sqlParameter.ParameterName = queryPreparedDataKey.Substring(1);
 
-                queryCommand.Parameters.Add(value);
+                queryCommand.Parameters.Add(sqlParameter);
                 continue;
             }
             else {
                 try {
-                    DbType dbType = this.DBQuery.GetSystemDBType(value.GetType());
+                    DbType dbType = this.DBQuery.GetSystemDBTypeByValue(value);
                     queryCommand.Parameters.Add(new DuckDBParameter {
                         ParameterName = queryPreparedDataKey.Substring(1),
                         Value         = value,
@@ -157,6 +158,15 @@ public class QueryBuilder : Base.QueryBuilder<QueryBuilder, Connector, Query, Du
         this.Result.BeginLoadData();
         while (queryReader.Read()) {
             queryReader.GetValues(rowData);
+
+            for (int rowDataIndex = 0; rowDataIndex < rowData.Length; rowDataIndex++) {
+                // Marshal to MemoryStream to avoid random-data overwrite on later reads
+                // When calling .LoadDataRow(), the UnmanagedMemoryStream items may get read
+                // and later calls to reading it will return random bytes
+                if (rowData[rowDataIndex] is UnmanagedMemoryStream) {
+                    rowData[rowDataIndex] = ((UnmanagedMemoryStream)rowData[rowDataIndex]).ToMemoryStream();
+                }
+            }
             this.Result.LoadDataRow(rowData, true);
 
             rowData = new object[this.Result.Columns.Count]; // reset
