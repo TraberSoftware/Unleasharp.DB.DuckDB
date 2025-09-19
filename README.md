@@ -24,7 +24,7 @@ dotnet add package Unleasharp.DB.DuckDB
 
 ### PackageReference (Manual)
 ```xml
-<PackageReference Include="Unleasharp.DB.DuckDB" Version="1.7.1" />
+<PackageReference Include="Unleasharp.DB.DuckDB" Version="1.8.0" />
 ```
 
 ## 🎯 Features
