@@ -797,7 +797,24 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
 
     /// <inheritdoc/>
     protected override string _RenderInsertOnConflictSentence() {
-        return string.Empty;
+        string returning = (!string.IsNullOrWhiteSpace(QueryReturning) ? $" RETURNING {QueryReturning}" : "");
+        if (this.QueryOnConflict == OnInsertConflict.NONE) {
+            return returning;
+        }
+
+        if (this.QueryOnConflict == OnInsertConflict.IGNORE) {
+            return $"ON CONFLICT ({Query.FieldDelimiter}{this.QueryOnConflictKeyColumn}{Query.FieldDelimiter}) DO NOTHING" + returning;
+        }
+        
+        List<string> rendered = new List<string>();
+
+        if (this.QueryColumns != null) {
+            foreach (string column in this.QueryColumns) {
+                rendered.Add($"{Query.FieldDelimiter}{column}{Query.FieldDelimiter} = EXCLUDED.{Query.FieldDelimiter}{column}{Query.FieldDelimiter}");
+            }
+        }
+
+        return (rendered.Count > 0 ? $"ON CONFLICT ({this.QueryOnConflictKeyColumn}) DO UPDATE SET " + string.Join(',', rendered) : "") + returning;
     }
 
     /// <inheritdoc/>
