@@ -787,12 +787,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
             }
         }
 
-        return (rendered.Count > 0 ? 
-            $"VALUES {string.Join(',', rendered)}" + 
-            ((!string.IsNullOrWhiteSpace(QueryReturning) && this.QueryValues.Count == 1 ? $" RETURNING {QueryReturning}" : "")) 
-            :
-            ""
-        );
+        return (rendered.Count > 0 ? $"VALUES {string.Join(',', rendered)}" : "");
     }
 
     /// <inheritdoc/>
