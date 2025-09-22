@@ -104,12 +104,102 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     }
 
     /// <summary>
+    /// Copies data from a JSON source into a database table represented by the specified class type.
+    /// </summary>
+    /// <remarks>This method renders a read_json/read_ndjson function as the data source for a COPY ... FROM read_json('file.json') query.</remarks>
+    /// <param name="tableName">The table name.</param>
+    /// <param name="readJsonFunction">A function that provides the JSON data to be copied.</param>
+    /// <returns>The current query instance.</returns>
+    public Query CopyIntoFromJSON(string tableName, ReadJSONFunction readJsonFunction) {
+        this.QueryType = QueryType.INSERT;
+
+        this.From(readJsonFunction.AsCopyFrom(), false);
+        return this.CopyInto(new From<Query> {
+            Table       = tableName,
+            EscapeTable = true,
+        });
+    }
+
+    /// <summary>
+    /// Copies data from a JSON source into a database table represented by the specified class type.
+    /// </summary>
+    /// <remarks>This method renders a read_json/read_ndjson function as the data source for a COPY ... FROM read_json('file.json') query.</remarks>
+    /// <typeparam name="TableClass">The table type.</typeparam>
+    /// <param name="readJsonFunction">A function that provides the JSON data to be copied.</param>
+    /// <returns>The current query instance.</returns>
+    public Query CopyIntoFromJSON<TableClass>(ReadJSONFunction readJsonFunction) where TableClass : class {
+        string tableName      = typeof(TableClass).Name;
+        Table  tableAttribute = typeof(TableClass).GetCustomAttribute<Table>();
+        if (tableAttribute != null) {
+            tableName = tableAttribute.Name;
+        }
+
+        return this.CopyIntoFromJSON(tableName, readJsonFunction);
+    }
+
+    /// <summary>
+    /// Copies data from a Parquet source into a database table represented by the specified table name.
+    /// </summary>
+    /// <remarks>This method renders a read_parquet function as the data source for a COPY ... FROM read_parquet(...) query.</remarks>
+    /// <param name="tableName">The table name.</param>
+    /// <param name="readParquetFunction">A function that provides the Parquet data to be copied.</param>
+    /// <returns>The current query instance.</returns>
+    public Query CopyIntoFromParquet(string tableName, ReadParquetFunction readParquetFunction) {
+        this.QueryType = QueryType.INSERT;
+
+        this.From(readParquetFunction.AsCopyFrom(), false);
+        return this.CopyInto(new From<Query> {
+            Table       = tableName,
+            EscapeTable = true,
+        });
+    }
+
+    /// <summary>
+    /// Copies data from a Parquet source into a database table represented by the specified class type.
+    /// </summary>
+    /// <remarks>This method renders a read_parquet function as the data source for a COPY ... FROM read_parquet(...) query.</remarks>
+    /// <typeparam name="TableClass">The table type.</typeparam>
+    /// <param name="readParquetFunction">A function that provides the Parquet data to be copied.</param>
+    /// <returns>The current query instance.</returns>
+    public Query CopyIntoFromParquet<TableClass>(ReadParquetFunction readParquetFunction) where TableClass : class {
+        string tableName      = typeof(TableClass).Name;
+        Table  tableAttribute = typeof(TableClass).GetCustomAttribute<Table>();
+        if (tableAttribute != null) {
+            tableName = tableAttribute.Name;
+        }
+
+        return this.CopyIntoFromParquet(tableName, readParquetFunction);
+    }
+
+    /// <summary>
     /// Specifies the data source for the query using the provided CSV reading function.
     /// </summary>
     /// <param name="readCsv">The <see cref="ReadCSVFunction"/> instance that defines how to read the CSV data.</param>
     /// <returns>The current query instance.</returns>
     public Query From(ReadCSVFunction readCsv) {
         this.From(readCsv.AsFunction(), false);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Specifies the data source for the query using the provided JSON reading function.
+    /// </summary>
+    /// <param name="readJson">The <see cref="ReadJSONFunction"/> instance that defines how to read the JSON data.</param>
+    /// <returns>The current query instance.</returns>
+    public Query From(ReadJSONFunction readJson) {
+        this.From(readJson.AsFunction(), false);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Specifies the data source for the query using the provided Parquet reading function.
+    /// </summary>
+    /// <param name="readParquet">The <see cref="ReadParquetFunction"/> instance that defines how to read the Parquet data.</param>
+    /// <returns>The current query instance.</returns>
+    public Query From(ReadParquetFunction readParquet) {
+        this.From(readParquet.AsFunction(), false);
 
         return this;
     }
