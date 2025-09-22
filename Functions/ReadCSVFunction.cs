@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Unleasharp.DB.DuckDB.Functions;
@@ -176,10 +177,58 @@ public class ReadCSVFunction {
     /// </summary>
     public bool? UnionByName { get; set; }
 
+
     /// <summary>
-    /// Path to the file(s). Required.
+    /// Path to the CSV file.
     /// </summary>
-    public string? Path { get; set; }
+    private string __Path;
+
+    /// <summary>
+    /// Path to the CSV files.
+    /// </summary>
+    private List<string>? __Paths = new List<string>();
+
+    /// <summary>
+    /// Path to the CSV files. In case multiple paths have not been set, it will
+    /// return a list with the single Path provided.
+    /// </summary>
+    public List<string>? Paths {
+        get {
+            if (__Paths != null && __Paths.Count > 0) {
+                return __Paths;
+            }
+
+            if (!string.IsNullOrWhiteSpace(__Path)) {
+                return new List<string> { __Path };
+            }
+
+            return default;
+        }
+        set {
+            __Paths = value;
+        }
+    }
+
+    /// <summary>
+    /// Path to the CSV file. Required. In case multiple paths have been set, it will
+    /// return the first item of the Paths property.
+    /// </summary>
+    public string Path {
+        get {
+            if (__Paths != null && __Paths.Count > 0) {
+                return __Paths.FirstOrDefault();
+            }
+
+            if (!string.IsNullOrWhiteSpace(__Path)) {
+                return __Path;
+            }
+
+            return __Path;
+        }
+        set {
+            __Path = value;
+        }
+    }
 
     public string AsFunction() {
         if (string.IsNullOrEmpty(Path)) {
@@ -258,7 +307,11 @@ public class ReadCSVFunction {
         }
         #endregion
 
-        return $"read_csv('{Path}'{(options.Count > 0 ? $", {string.Join(", ", options)}" : "")})";
+        var files = Paths.Count == 1
+            ? $"'{Paths[0]}'"
+            : $"[{string.Join(", ", Paths.ConvertAll(f => $"'{f}'"))}]";
+
+        return $"read_csv({files}{(options.Count > 0 ? $", {string.Join(", ", options)}" : "")})";
     }
 
     public string AsCopyFrom() {
@@ -310,7 +363,6 @@ public class ReadCSVFunction {
         AddBool  ("auto_detect",          AutoDetect);
         AddList  ("auto_type_candidates", AutoTypeCandidates);
         AddLong  ("buffer_size",          BufferSize);
-        //AddDict  ("columns",              Columns);
         AddString("comment",              Comment);
         AddString("compression",          Compression);
         AddString("dateformat",           DateFormat);
@@ -345,6 +397,10 @@ public class ReadCSVFunction {
         }
         #endregion
 
-        return $"'{Path}'{(options.Count > 0 ? $" ({string.Join(", ", options)})" : "")};";
+        var files = Paths.Count == 1
+            ? $"'{Paths[0]}'"
+            : $"[{string.Join(", ", Paths.ConvertAll(f => $"'{f}'"))}]";
+
+        return $"{files}{(options.Count > 0 ? $" ({string.Join(", ", options)})" : "")};";
     }
 }
