@@ -1,8 +1,9 @@
 ﻿# 🦆 Unleasharp.DB.DuckDB
 
-[![NuGet version (Unleasharp.DB.DuckDB)](https://img.shields.io/nuget/v/Unleasharp.DB.DuckDB.svg?style=flat-square)](https://www.nuget.org/packages/Unleasharp.DB.DuckDB/)
-[![Github Pages](https://img.shields.io/badge/home-Github_Pages_-blue)](https://trabersoftware.github.io/Unleasharp.DB.Base)
-[![Documentation](https://img.shields.io/badge/dev-Documentation-blue)](https://trabersoftware.github.io/Unleasharp.DB.Base/docs/)
+[![NuGet version (Unleasharp.DB.DuckDB)](https://img.shields.io/nuget/v/Unleasharp.DB.DuckDB.svg?style=flat-square&logo=nuget)](https://www.nuget.org/packages/Unleasharp.DB.DuckDB/)
+[![Github Pages](https://img.shields.io/badge/home-Github_Pages_-blue?logo=github)](https://trabersoftware.github.io/Unleasharp.DB.Base)
+[![Documentation](https://img.shields.io/badge/dev-Documentation-blue?logo=googledocs)](https://trabersoftware.github.io/Unleasharp.DB.Base/docs/)
+[![Changelog](https://img.shields.io/badge/dev-Changelog-blue?logo=keepachangelog)](https://trabersoftware.github.io/Unleasharp.DB.Base/docs/changelog/)
 
 [![Unleasharp.DB.DuckDB](https://socialify.git.ci/TraberSoftware/Unleasharp.DB.DuckDB/image?description=1&font=Inter&logo=https%3A%2F%2Fraw.githubusercontent.com%2FTraberSoftware%2FUnleasharp%2Frefs%2Fheads%2Fmain%2Fassets%2Flogo-small.png&name=1&owner=1&pattern=Circuit+Board&theme=Light)](https://github.com/TraberSoftware/Unleasharp.DB.DuckDB)
 
@@ -55,6 +56,7 @@ Even so, specific features like Query.CreateSequence() have been implemented to 
 
 - 📚 **[GitHub Pages Documentation](https://trabersoftware.github.io/Unleasharp.DB.Base/docs/)** - Complete documentation
 - 🎯 **[Getting Started Guide](https://trabersoftware.github.io/Unleasharp.DB.Base/docs/getting-started/)** - Quick start guide
+- 📝 **[Changelog](https://trabersoftware.github.io/Unleasharp.DB.Base/docs/changelog/)** - New features and improvements
 - 🦆 **[Unleasharp.DB DuckDB Documentation](https://trabersoftware.github.io/Unleasharp.DB.Base/docs/query-building/duckdb.html)** - Specific query builder documentation
 
 ## 📦 Dependencies
