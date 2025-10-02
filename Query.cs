@@ -582,7 +582,7 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     /// fragment's properties, including  handling subqueries, null values, and value escaping as necessary.</returns>
     public string RenderWhere(Where<Query> fragment) {
         if (fragment.Subquery != null) {
-            return $"{fragment.Field.Render()} {fragment.Comparer.GetDescription()} ({fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()})";
+            return $"{fragment.Field?.Render()} {fragment.Comparer.GetDescription()} ({fragment.Subquery.WithParentQuery(this.ParentQuery != null ? this.ParentQuery : this).Render()})";
         }
 
         List<string> toRender = new List<string>();
