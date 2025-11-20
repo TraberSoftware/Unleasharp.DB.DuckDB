@@ -794,8 +794,16 @@ public class Query : Unleasharp.DB.Base.Query<Query> {
     protected override string _RenderDeleteSentence() {
         From<Query> from = this.QueryFrom.FirstOrDefault();
 
-        if (from != null) {
-            return $"DELETE FROM {from.Table}{(!string.IsNullOrWhiteSpace(from.TableAlias) ? $" AS {from.TableAlias}" : "")}";
+        if (from != null && !string.IsNullOrWhiteSpace(from.Table)) {
+            string rendered = string.Empty;
+            if (from.EscapeTable) {
+                rendered = $"DELETE FROM {FieldDelimiter + from.Table + FieldDelimiter}";
+            }
+            else {
+                rendered = $"DELETE FROM {from.Table}";
+            }
+
+            return $"{rendered}{(!string.IsNullOrWhiteSpace(from.TableAlias) ? $" AS {from.TableAlias}" : "")}";
         }
 
         return string.Empty;
